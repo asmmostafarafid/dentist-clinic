@@ -1,7 +1,5 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
-const fs = require("fs-extra");
 const fileUpload = require("express-fileupload");
 const MongoClient = require("mongodb").MongoClient;
 const port = process.env.PORT || 5000;
@@ -11,13 +9,12 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const app = express();
 
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(cors());
 
 app.use(express.static("doctors"));
 app.use(fileUpload());
 
-const port = 5000;
 
 app.get("/", (req, res) => {
   res.send("Hello form db it is working");
@@ -28,6 +25,7 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
 });
 client.connect((err) => {
+  console.log(err);
   const appointmentCollection = client
     .db("doctorsPortal")
     .collection("appointments");
@@ -81,36 +79,36 @@ client.connect((err) => {
     };
 
     doctorCollection.insertOne({ name, email, image })
-     .then((result) => {
-    
+      .then((result) => {
+
         res.send(result.insertedCount > 0);
       })
-      
-    });
-  });
 
-  app.get("/doctors", (req, res) => {
-    doctorCollection.find({}).toArray((err, documents) => {
-      res.send(documents);
-    });
   });
-
-  app.post("/isDoctor", (req, res) => {
-    const email = req.body.email;
-    doctorCollection.find({ email: email }).toArray((err, doctors) => {
-        const filter = {date : date.date}
-        if(doctors.length === 0) {
-            filter.email = email;
-        }
-        appointmentCollection.find(filter)
-        .toArray((err, documents) => {
-            console.log(email, date.date, doctors, documents)
-            res.send(documents);
-        })
-    });
-  });
-
-  
 });
+
+app.get("/doctors", (req, res) => {
+  doctorCollection.find({}).toArray((err, documents) => {
+    res.send(documents);
+  });
+});
+
+app.post("/isDoctor", (req, res) => {
+  const email = req.body.email;
+  doctorCollection.find({ email: email }).toArray((err, doctors) => {
+    const filter = { date: date.date }
+    if (doctors.length === 0) {
+      filter.email = email;
+    }
+    appointmentCollection.find(filter)
+      .toArray((err, documents) => {
+        console.log(email, date.date, doctors, documents)
+        res.send(documents);
+      })
+  });
+});
+
+ 
+
 
 app.listen(process.env.PORT || port);
